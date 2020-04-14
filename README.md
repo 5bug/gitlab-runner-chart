@@ -33,3 +33,5 @@ else
     helm install --namespace default --name gitlab-runner *.tgz    
 fi
 ```
+
+个人博客：http://www.5bug.wang 欢迎交流！
