@@ -47,8 +47,6 @@ spec:
         env:
         {{ include "gitlab-runner.runner-env-vars" . | indent 8 }}
         volumeMounts:
-#        - name: ci-cache
-#          mountPath: /ci-cache
         - name: runner-secrets
           mountPath: /secrets
           readOnly: false
@@ -99,8 +97,6 @@ spec:
         - name: metrics
           containerPort: 9252
         volumeMounts:
-        - name: ci-cache
-          mountPath: /ci-cache
         - name: runner-secrets
           mountPath: /secrets
         - name: etc-gitlab-runner
@@ -115,9 +111,6 @@ spec:
         resources:
 {{ toYaml .Values.resources | indent 10 }}
       volumes:
-      - name: ci-cache
-        hostPath:
-          path: /data/cache
       - name: runner-secrets
         emptyDir:
           medium: "Memory"

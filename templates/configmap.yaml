@@ -22,6 +22,8 @@ data:
 
     if [[ -f /secrets/gcs-applicaton-credentials-file ]]; then
       export GOOGLE_APPLICATION_CREDENTIALS="/secrets/gcs-applicaton-credentials-file"
+    elif [[ -f /secrets/gcs-application-credentials-file ]]; then
+      export GOOGLE_APPLICATION_CREDENTIALS="/secrets/gcs-application-credentials-file"
     else
       if [[ -f /secrets/gcs-access-id && -f /secrets/gcs-private-key ]]; then
         export CACHE_GCS_ACCESS_ID=$(cat /secrets/gcs-access-id)
@@ -42,19 +44,38 @@ data:
       exit 1
     fi
 
-    cat /home/gitlab-runner/.gitlab-runner/config.toml
-    
     cat >>/home/gitlab-runner/.gitlab-runner/config.toml <<EOF
+        {{- if .Values.hostMountPaths -}}
+        {{ range .Values.hostMountPaths }}
         [[runners.kubernetes.volumes.host_path]]
-          name = "docker-sock"
-          mount_path = "/var/run/docker.sock"
-          read_only = true
-          host_path = "/var/run/docker.sock"        
-        [[runners.kubernetes.volumes.host_path]]
-          name = "cache"
-          mount_path = "/cache"
-          read_only = false
-          host_path = "/data/gitlab-runner/cache" 
+          name = "{{ .name }}"
+          read_only = {{ default true .readOnly }}
+          mount_path = "{{ .mountPath }}"
+          host_path = "{{ .hostPath }}"
+        {{- end }}
+        {{- end }}
+
+        {{- if .Values.pvcMountPaths -}}
+        {{ range .Values.pvcMountPaths }}
+        [[runners.kubernetes.volumes.pvc]]
+          name = "{{ .pvcName }}"
+          mount_path = "{{ .mountPath }}"
+        {{- end }}
+        {{- end }}
+
+        {{- if .Values.secretMountPaths -}}
+        {{ range .Values.secretMountPaths }}
+        [[runners.kubernetes.volumes.secret]]
+          name = "{{ .secretName }}"
+          mount_path = "{{ .mountPath }}"
+          [runners.kubernetes.volumes.secret.items]
+          {{- range .items }}
+            {{ range $key, $val := . }}
+              "{{ $key }}" = "{{ $val }}"
+            {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- end }}
     EOF
 
     # Start the runner
@@ -69,7 +90,7 @@ data:
     log_format = {{ .Values.logFormat | quote }}
     {{- end }}
     {{- if .Values.metrics.enabled }}
-    listen_address = '[::]:9252'
+    listen_address = ':9252'
     {{- end }}
   configure: |
     set -e
@@ -87,6 +108,13 @@ data:
         {{- range $key, $val := .Values.runners.nodeSelector }}
         --kubernetes-node-selector {{ $key | quote }}:{{ $val | quote }} \
         {{- end }}
+        {{- range .Values.runners.nodeTolerations }}
+        {{-   $keyValue := .key }}
+        {{-   if eq (.operator | default "Equal") "Equal"  }}
+        {{-     $keyValue = print $keyValue "=" (.value | default "" ) }}
+        {{-   end }}
+        --kubernetes-node-tolerations {{ $keyValue }}:{{ .effect | quote }} \
+        {{- end }}
         {{- range $key, $value := .Values.runners.podLabels }}
         --kubernetes-pod-labels {{ $key | quote }}:{{ $value | quote }} \
         {{- end }}
@@ -101,6 +129,13 @@ data:
         {{- end }}
         {{- if and (hasKey .Values.runners "protected") .Values.runners.protected }}
         --access-level="ref_protected" \
+        {{- end }}
+        {{- if .Values.runners.pod_security_context }}
+        {{-   if .Values.runners.pod_security_context.supplemental_groups }}
+        {{-     range $gid := .Values.runners.pod_security_context.supplemental_groups }}
+        --kubernetes-pod-security-context-supplemental-groups {{ $gid | quote }} \
+        {{-     end }}
+        {{-   end }}
         {{- end }}
         --non-interactive
 

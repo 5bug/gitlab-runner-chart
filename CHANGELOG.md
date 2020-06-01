@@ -1,4 +1,52 @@
-# CHANGELOG
+## v0.17.0 (2020-05-20)
+
+### New features
+
+- Expose settings for kubernetes resource limits and requests overwrites !220 (Alexander Petermann @lexxxel)
+- Add support for setting Node Tolerations !188 (Zeyu Ye @Shuliyey)
+
+### Maintenance
+
+- Update GitLab Runner version to 13.0.0
+- Update package name in note !234
+- Pin CI jobs to gitlab-org runners !222
+
+## v0.16.0 (2020-04-22)
+
+### New features
+
+- Add Service Account annotation support !211 (David Rosson @davidrosson)
+
+### Bug fixes
+
+- Support correct spelling of GCS secret !214 (Arthur Wiebe @arthur65)
+
+### Maintenance
+
+- Remove dependency of `gitlab-runner-builder` runner !221
+- Fix linting for forks with a different name than "gitlab-runner" !218
+- Install gitlab-changelog installation !217
+
+### Other changes
+
+- Update GitLab Runner version to 12.10.1
+- Change listen address to not force IPv6 !213 (Fábio Matavelli @fabiomatavelli)
+
+## v0.15.0 (2020-03-20)
+
+### Maintenance
+
+- Update GitLab Runner version to 12.9.0
+- Update changelog generator configuration !212
+- Replace changelog entries generation script !209
+
+### Other changes
+
+- Fix values.yaml typo !210 (Brian Choy @bycEEE)
+
+## v0.14.0 (2020-02-22)
+
+- Update GitLab Runner version to 12.8.0
 
 ## v0.13.0 (2020-01-20)
 

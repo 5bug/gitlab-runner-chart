@@ -5,7 +5,7 @@
 ##
 ## ref: https://hub.docker.com/r/gitlab/gitlab-runner/tags/
 ##
-image: gitlab/gitlab-runner:alpine-v12.1.0
+# image: gitlab/gitlab-runner:alpine-v11.6.0
 
 ## Specify a imagePullPolicy
 ## 'Always' if imageTag is 'latest', else set to 'IfNotPresent'
@@ -39,7 +39,7 @@ imagePullPolicy: IfNotPresent
 ##
 unregisterRunners: true
 
-## When stopping ther runner, give it time to wait for it's jobs to terminate.
+## When stopping the runner, give it time to wait for its jobs to terminate.
 ##
 ## Updating the runner's chart version or configuration will cause the runner container
 ## to be terminated with a graceful stop request. terminationGracePeriodSeconds
@@ -62,7 +62,7 @@ concurrent: 10
 ## Defines in seconds how often to check GitLab for a new builds
 ## ref: https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-global-section
 ##
-checkInterval: 1
+checkInterval: 30
 
 ## Configure GitLab Runner's logging level. Available values are: debug, info, warn, error, fatal, panic
 ## ref: https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-global-section
@@ -76,7 +76,7 @@ checkInterval: 1
 
 ## For RBAC support:
 rbac:
-  create: true
+  create: false
   ## Define specific rbac permissions.
   # resources: ["pods", "pods/exec", "secrets"]
   # verbs: ["get", "list", "watch", "create", "patch", "delete"]
@@ -88,6 +88,12 @@ rbac:
   ## Use the following Kubernetes Service Account name if RBAC is disabled in this Helm chart (see rbac.create)
   ##
   # serviceAccountName: default
+
+  ## Specify annotations for Service Accounts, useful for annotations such as eks.amazonaws.com/role-arn
+  ##
+  ## ref: https://docs.aws.amazon.com/eks/latest/userguide/specify-service-account-role.html
+  ##
+  # serviceAccountAnnotations: {}
 
 ## Configure integrated Prometheus metrics exporter
 ## ref: https://docs.gitlab.com/runner/monitoring/#configuration-of-the-metrics-http-server
@@ -109,7 +115,7 @@ runners:
 
   ## Specify the image pull policy: never, if-not-present, always. The cluster default will be used if not set.
   ##
-  imagePullPolicy: "if-not-present"
+  # imagePullPolicy: ""
 
   ## Defines number of concurrent requests for new job from GitLab
   ## ref: https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runners-section
@@ -146,7 +152,7 @@ runners:
   ## commands. Please read the docs before turning this on:
   ## ref: https://docs.gitlab.com/runner/executors/kubernetes.html#using-docker-dind
   ##
-  privileged: true
+  privileged: false
 
   ## The name of the secret containing runner-token and runner-registration-token
   # secret: gitlab-runner
@@ -186,7 +192,7 @@ runners:
   ## ref: https://docs.gitlab.com/runner/configuration/advanced-configuration.html#the-runnerscachegcs-section
   ## You could configure
   ## $ kubectl create secret generic google-application-credentials \
-  ##   --from-file=gcs-applicaton-credentials-file=./path-to-your-google-application-credentials-file.json
+  ##   --from-file=gcs-application-credentials-file=./path-to-your-google-application-credentials-file.json
   ## ref: https://kubernetes.io/docs/concepts/configuration/secret/
   ##
   ## Access using access-id and private-key:
@@ -221,9 +227,13 @@ runners:
   ##
   builds: {}
     # cpuLimit: 200m
+    # cpuLimitOverwriteMaxAllowed: 400m
     # memoryLimit: 256Mi
+    # memoryLimitOverwriteMaxAllowed: 512Mi
     # cpuRequests: 100m
+    # cpuRequestsOverwriteMaxAllowed: 200m
     # memoryRequests: 128Mi
+    # memoryRequestsOverwriteMaxAllowed: 256Mi
 
   ## Service Container specific configuration
   ##
@@ -240,7 +250,16 @@ runners:
     # memoryLimit: 256Mi
     # cpuRequests: 100m
     # memoryRequests: 128Mi
-    # image: gitlab/gitlab-runner-helper:x86_64-latest
+    # image: "gitlab/gitlab-runner-helper:x86_64-${CI_RUNNER_REVISION}"
+
+  ## Helper container security context configuration
+  ## Refer to https://docs.gitlab.com/runner/executors/kubernetes.html#using-security-context
+  # pod_security_context:
+  #   run_as_non_root: true
+  #   run_as_user: 100
+  #   run_as_group: 100
+  #   fs_group: 65533
+  #   supplemental_groups: [101, 102]
 
   ## Service Account to be used for runners
   ##
@@ -254,6 +273,11 @@ runners:
   ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   ##
   # nodeSelector: {}
+
+  ## Specify node tolerations for CI job pods assignment
+  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  # nodeTolerations: {}
 
   ## Specify pod labels for CI job pods
   ##
